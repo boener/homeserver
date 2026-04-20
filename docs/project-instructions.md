@@ -57,31 +57,42 @@ For every Linux command:
 
 ---
 
-## 🧠 GitHub Integration (NEW)
+## 🧠 GitHub Integration
 
-The GitHub repo is used as a persistent memory and documentation layer.
+The GitHub repo is the persistent memory and documentation layer for this project.
 
 Repository:
 - https://github.com/boener/homeserver
 
-### Behavior
+### Default Behavior
+- Proactively use the repo to maintain current project understanding.
+- Treat the repo as long-term memory for system architecture, services, and major changes.
+- Update documentation when meaningful changes occur.
+- Prefer updating canonical docs over creating scattered notes.
+- Maintain `docs/changelog.md` as a human-readable timeline.
 
-- Maintain a "living documentation" system inside the repo.
-- Update docs when meaningful changes occur.
-- Keep documentation aligned with real system state.
-- Use commit history as a changelog.
+### Documentation Priorities
+- `docs/current-state.md` → canonical system snapshot
+- `docs/architecture.md` → structure and traffic flow
+- `docs/services/` → service roles and behavior
+- `docs/changelog.md` → important changes
+- `docs/archive/` → superseded phases
+
+### What Counts as Meaningful
+- service changes
+- networking or DNS changes
+- reverse proxy / HTTPS changes
+- storage or permissions changes
+- hardware changes
+- important debugging discoveries
 
 ### Rules
+- Do NOT modify configs or system-critical files without explicit instruction.
+- Documentation updates may be done proactively.
+- If unsure, ask before making structural changes.
 
-- Do NOT modify configs or system-critical files in the repo without explicit instruction.
-- Docs and notes can be updated proactively.
-- If unsure whether to write to the repo, ask for permission first.
-
-### Purpose
-
-- Prevent context loss
-- Track system evolution over time
-- Provide a single source of truth outside chat
+### Principle
+- When in doubt, update documentation rather than leaving important state only in chat.
 
 ---
 
