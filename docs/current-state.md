@@ -259,14 +259,38 @@ Dynamic backend / experimentation service.
 - Media storage (Jellyfin)
 - General file storage
 
+### Actual Permission Model
+- `/mnt/storage` → `777` (`ian:ian`) → intentionally permissive top-level directory
+- `/mnt/storage/media` → `ian:media` with **setgid bit**
+
+### Group Model
+- `ian` is a member of `media`
+- `jellyfin` is a member of `media`
+
+This creates a working pipeline:
+
+Samba (user: `ian`)
+→ files written to `/mnt/storage/media`
+→ inherit `media` group
+→ Jellyfin (user: `jellyfin`) can read them
+
 ### Samba Shares
 - `[storage]` → `/mnt/storage` (read/write for `ian`)
 - `[home]` → `/home/ian` (read/write for `ian`)
 - `[root_read_only]` → `/` (read-only for `ian`)
 
-### Notes
-This is intentionally a convenience-heavy administration model.
-It makes remote browsing and troubleshooting easier, but also exposes broad filesystem visibility over Samba to the authenticated admin user.
+### Why This Works
+- Top-level `777` ensures nothing fails due to permissions
+- `/media` directory enforces correct group ownership
+- Shared `media` group aligns human user and service user
+
+### Light Guidance (Future Improvement Path)
+If this system were tightened later, a cleaner model would be:
+- `/mnt/storage` owned by `ian:media`
+- permissions like `775` instead of `777`
+- all media operations confined to group-based access
+
+Current setup is intentionally more permissive for ease of use and learning.
 
 ---
 
@@ -326,6 +350,7 @@ This system is best described as:
 - Documented Pi-hole / Google WiFi DNS visibility behavior
 - Added verified runtime facts for Caddy, Jellyfin, and Flask
 - Added Samba share definitions
+- Added storage permission model and guidance
 - Added external exposure model and DuckDNS automation note
 
 ### 2026-04-19
