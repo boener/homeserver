@@ -27,7 +27,7 @@ It is intentionally:
 - 1TB HDD → `/mnt/storage`
 
 ### Networking
-- ❌ Built-in NIC (enp1s0): 10/100 (fallback only)
+- ❌ Built-in NIC (enp1s0): 10/100 (configured, normally disconnected)
 - ✅ Active NIC: USB 3.0 Gigabit (`enx6c6e072bdc14`)
 
 ### Key Insight
@@ -35,6 +35,35 @@ This is **consumer laptop hardware repurposed as a server**:
 - perfectly usable
 - not redundant
 - not designed for 24/7 reliability
+
+---
+
+## 🔌 Network Interface Model (Clarified)
+
+The system intentionally maintains **two configured network interfaces**, but only one is used during normal operation.
+
+### Primary Interface (Active)
+- `enx6c6e072bdc14` (USB gigabit adapter)
+- Physically connected at all times
+- Carries all traffic
+- Assigned the server IP (`192.168.86.53`)
+
+### Secondary Interface (Cold Standby)
+- `enp1s0` (built-in NIC)
+- Configured in the OS but **normally has no cable connected**
+- Exists purely as a **recovery path**
+
+### Purpose of the Secondary Interface
+If the USB adapter fails or is unplugged:
+- a cable can be moved to the built-in NIC
+- the system can be reached over the network again
+- no keyboard/screen interaction is required
+
+### Important Distinction
+This is not a load-balancing or failover setup.
+It is a **manual recovery mechanism**.
+
+Only one interface is expected to be active at a time.
 
 ---
 
@@ -344,6 +373,9 @@ This system is best described as:
 ## 🧾 Changelog
 
 ### 2026-04-20
+- Clarified dual-NIC model (active USB + disconnected standby built-in NIC)
+- Documented fallback interface as manual recovery path (not failover)
+- Added explicit explanation of "configured but normally unplugged" behavior
 - Added operational posture and access model
 - Documented SSH fallback strategy and admin workflow
 - Clarified current static-IP transition state after NIC change
