@@ -31,423 +31,152 @@ It is intentionally:
 - ❌ Built-in NIC (enp1s0): 10/100 (configured, normally disconnected)
 - ✅ Active NIC: USB 3.0 Gigabit (`enx6c6e072bdc14`)
 
-### Key Insight
-This is **consumer laptop hardware repurposed as a server**:
-- perfectly usable
-- not redundant
-- not designed for 24/7 reliability
-
----
-
-## 🔌 Network Interface Model (Clarified)
-
-The system intentionally maintains **two configured network interfaces**, but only one is used during normal operation.
-
-### Primary Interface (Active)
-- `enx6c6e072bdc14` (USB gigabit adapter)
-- Physically connected at all times
-- Carries all traffic
-- Assigned the server IP (`192.168.86.53`)
-
-### Secondary Interface (Cold Standby)
-- `enp1s0` (built-in NIC)
-- Configured in the OS but **normally has no cable connected**
-- Exists purely as a **recovery path**
-
-### Purpose of the Secondary Interface
-If the USB adapter fails or is unplugged:
-- a cable can be moved to the built-in NIC
-- the system can be reached over the network again
-- no keyboard/screen interaction is required
-
-### Important Distinction
-This is not a load-balancing or failover setup.
-It is a **manual recovery mechanism**.
-
-Only one interface is expected to be active at a time.
-
----
-
-## 🧭 Operational Posture
-
-This machine is best understood as:
-- an always-on learning and experimentation server
-- low-risk and non-critical to daily life
-- remotely administered most of the time
-- acceptable to lose and rebuild if necessary
-
-This is **not** treated as production infrastructure.
-It is closer to a persistent lab environment or a recoverable game save than a mission-critical system.
-
----
-
-## 🔐 Access / Administration Model
-
-### Human Access
-- Primary administration is over SSH from Ian's Windows 11 machine
-- Secondary SSH access is occasionally used from an iMac or Chromebook
-- Physical access is possible, but inconvenient because the machine is not kept in an easy-to-reach location
-
-### Admin User Model
-- Primary human operator: `ian`
-- Administrative escalation is done with `sudo`
-- Direct root login is not part of the normal workflow
-
-### SSH Model
-- SSH runs on the default port: `22`
-- SSH keys are configured on the Windows administration machine
-- Password authentication remains enabled as a fallback
-
-### Why Password SSH Is Still Enabled
-This is a deliberate tradeoff, not an accident.
-Because the project is a learning system and network settings have already changed during experimentation, password login remains available to reduce the risk of accidental lockout.
-
----
-
-## 🌐 Network Architecture
-
-### Physical Flow
-
-Internet (Fiber)
-→ Fiber Modem / ONT
-→ Google WiFi (DMZ target)
-→ Switch
-→ Server (`192.168.86.53`)
-→ Pi-hole (`192.168.86.49`)
-
----
-
-### Logical Responsibilities
-
-#### Fiber Modem
-- Provides internet connection
-- Forwards all traffic via DMZ to Google WiFi
-
-#### Google WiFi
-- Primary router
-- Handles:
-  - DHCP
-  - Routing
-  - Port forwarding (80/443)
-
-#### Pi-hole
-- DNS server for LAN
-- Provides:
-  - Ad blocking
-  - Split-horizon DNS
-
----
-
-### Server IP Model
-- Current server address: `192.168.86.53`
-- At the moment, this IP is manually configured in Ubuntu
-- This is a temporary state created during the network adapter transition to the USB gigabit NIC
-- The long-term intent is to return to DHCP with a reservation in Google WiFi once lease / MAC confusion settles down
-
-### Important Note
-This means addressing is currently under **OS-level manual control**, not purely router-driven DHCP behavior.
-
----
-
-### DNS Behavior
-- Google WiFi uses Pi-hole as its DNS resolver
-- Most client DNS traffic reaches Pi-hole through the router
-- Ian's Windows PC is pointed directly at Pi-hole for clearer per-device visibility
-
-### Visibility Implication
-Pi-hole currently sees:
-- the router as a bulk client for most devices
-- Ian's Windows machine as a distinct client
-
-So DNS visibility is **partially aggregated**, not fully per-device across the whole network.
-
----
-
-### Local DNS / Split-Horizon Entries
-The following public hostnames are overridden internally to the server's LAN IP:
-
-- `boener.duckdns.org` → `192.168.86.53`
-- `jellyboen.duckdns.org` → `192.168.86.53`
-
-This creates a split-horizon DNS pattern:
-- inside the LAN, these names resolve directly to the server
-- outside the LAN, they resolve via DuckDNS to the WAN IP
-
----
-
-### Key Concept: Double NAT (Controlled)
-
-There are technically two routers, but:
-- DMZ eliminates most problems
-- Google WiFi behaves as the “real” router
-
----
-
-## 🔁 Request Flow (How Traffic Actually Moves)
-
-Client
-→ Pi-hole (DNS resolution)
-→ Caddy (HTTPS entry point)
-→ Internal service (Flask / Jellyfin)
-
----
-
-## 🔐 Reverse Proxy (Caddy)
-
-### Role
-Caddy is the **central entry point** for all web traffic.
-
-It handles:
-- HTTPS (Let’s Encrypt certificates)
-- Routing to internal services
-- Access control
-
-### Verified Runtime Facts
-- Config path: `/etc/caddy/Caddyfile`
-- systemd unit: `/usr/lib/systemd/system/caddy.service`
-- Binary: `/usr/bin/caddy`
-- Service name: `caddy.service`
-- Runtime user/group: `caddy:caddy`
-- Service is enabled and running
-
----
-
-### Routing
-
-- `boener.duckdns.org` → Flask (port 5000)
-- `jellyboen.duckdns.org` → Jellyfin (port 8096)
-
----
-
-### Security Model
-
-- TLS terminated at Caddy
-- Internal services run on localhost
-- Jellyfin restricted to LAN via IP filtering
-
----
-
-## 🎬 Jellyfin
-
-### Role
-Media server for local streaming.
-
-### Access
-- URL: `https://jellyboen.duckdns.org`
-- HTTPS handled by Caddy
-
-### Behavior
-- Allowed: LAN clients
-- Blocked: external internet (403 via Caddy)
-
-### Media
-- Stored at: `/mnt/storage`
-
-### Performance
-- Hardware transcoding enabled (VAAPI)
-
-### Verified Runtime Facts
-- systemd unit: `/usr/lib/systemd/system/jellyfin.service`
-- systemd override directory present: `/etc/systemd/system/jellyfin.service.d`
-- Observed override file: `jellyfin.service.conf`
-- Binary: `/usr/bin/jellyfin`
-- ffmpeg binary: `/usr/lib/jellyfin-ffmpeg/ffmpeg`
-- Runtime user/group: `jellyfin:jellyfin`
-- Service is enabled and running
-
----
-
-## 🐍 Flask Application
-
-### Role
-Dynamic backend / experimentation service.
-
-### Details
-- Runs on port 5000
-- Reverse proxied through Caddy
-- Managed via systemd
-
-### Verified Runtime Facts
-- Application path: `/home/ian/flaskapp/`
-- Virtual environment present in app directory
-- systemd unit: `/etc/systemd/system/flaskapp.service`
-- Launch command: `/home/ian/flaskapp/bin/python /home/ian/flaskapp/app.py`
-- Runtime user/group: `ian:ian`
-- Service is enabled and running
-
----
-
-## 💾 Storage
-
-### Primary Data Mount
-- `/mnt/storage` (ext4)
-
-### Access
-- Shared via Samba
-
-### Purpose
-- Media storage (Jellyfin)
-- General file storage
-
-### Actual Permission Model
-- `/mnt/storage` → `777` (`ian:ian`) → intentionally permissive top-level directory
-- `/mnt/storage/media` → `ian:media` with **setgid bit**
-
-### Group Model
-- `ian` is a member of `media`
-- `jellyfin` is a member of `media`
-
-This creates a working pipeline:
-
-Samba (user: `ian`)
-→ files written to `/mnt/storage/media`
-→ inherit `media` group
-→ Jellyfin (user: `jellyfin`) can read them
-
-### Samba Shares
-- `[storage]` → `/mnt/storage` (read/write for `ian`)
-- `[home]` → `/home/ian` (read/write for `ian`)
-- `[root_read_only]` → `/` (read-only for `ian`)
-
-### Why This Works
-- Top-level `777` ensures nothing fails due to permissions
-- `/media` directory enforces correct group ownership
-- Shared `media` group aligns human user and service user
-
-### Light Guidance (Future Improvement Path)
-If this system were tightened later, a cleaner model would be:
-- `/mnt/storage` owned by `ian:media`
-- permissions like `775` instead of `777`
-- all media operations confined to group-based access
-
-Current setup is intentionally more permissive for ease of use and learning.
-
 ---
 
 ## 💽 Backup System
 
-### Backup Mount
-- `/mnt/backup` (ext4)
-- Mounted persistently through `/etc/fstab` using filesystem UUID
-- Backup filesystem owned by `ian:ian` so scheduled jobs can write without `sudo`
+### Overview
+The system uses a **two-layer backup architecture**:
 
-### Backup Strategy
-- Local snapshot-style backups stored on a dedicated external 1TB USB drive
-- `current/` acts as the latest mirror of `/mnt/storage`
-- `snapshots/` contains dated point-in-time copies created with hard links
-- This is a **local backup**, not redundancy and not offsite protection
+1. **Data Backup (user-level)**
+2. **System Backup (root-level)**
 
-### Snapshot Layout
-- `/mnt/backup/current`
-- `/mnt/backup/snapshots/YYYY-MM-DD`
+Both use the same snapshot model but run under different privilege levels.
 
-Each snapshot is browseable like a normal folder.
-Unchanged files are hard-linked, so repeated snapshots do not fully duplicate disk usage.
+---
+
+## 📦 Data Backup (User)
+
+### Scope
+- `/mnt/storage`
+
+### Ownership
+- Runs as user `ian`
+
+### Structure
+```
+/mnt/backup/
+├── current/
+└── snapshots/YYYY-MM-DD/
+```
+
+### Script
+- `/home/ian/backup.sh`
+
+### Behavior
+- `rsync -a --delete` syncs data into `current/`
+- `cp -al` creates snapshot using hard links
+- retention: ~14 days
 
 ### Automation
-Backup job is driven by Ian's user crontab:
+- Cron (user):
+```
+0 3 * * * /home/ian/backup.sh
+```
 
-- `0 3 * * * /home/ian/backup.sh`
+---
 
-### Backup Script
-- Path: `/home/ian/backup.sh`
-- Sync step updates `current/` from `/mnt/storage`
-- Snapshot step creates a dated hard-link snapshot from `current/`
-- Retention policy removes snapshot directories older than 14 days
+## ⚙️ System Backup (Root)
 
-### Timezone
-- Server timezone set to `America/Phoenix`
-- This was changed from `Etc/UTC` so snapshot names match the user's local day and cron timing is human-friendly
+### Scope
+- `/etc`
+- `/home/ian`
 
-### Operational Meaning
-This setup protects primarily against:
-- failure of the primary `/mnt/storage` disk
-- accidental deletes or bad changes discovered within the retention window
+### Ownership
+- Runs as `root`
 
-It does **not** protect against:
+### Why Root Is Required
+System files are owned by root and protected from hard-link creation by non-root users.
+Running as root avoids permission errors and eliminates the need for fragile exclude lists.
+
+### Structure
+```
+/mnt/backup/system/
+├── current/
+│   ├── etc/
+│   └── home-ian/
+└── snapshots/YYYY-MM-DD/
+```
+
+### Script
+- `/usr/local/sbin/system-backup.sh`
+
+### Behavior
+- `rsync -a --delete` for both `/etc` and `/home/ian`
+- snapshot created via `cp -al`
+- existing same-day snapshot is replaced if script reruns
+- retention: ~14 days
+
+### Automation
+- Cron (root):
+```
+30 3 * * * /usr/local/sbin/system-backup.sh
+```
+
+### Timing Design
+- Data backup runs at 3:00 AM
+- System backup runs at 3:30 AM
+- Prevents disk contention and overlapping IO spikes
+
+---
+
+## 🧠 Design Rationale
+
+This system intentionally separates concerns:
+
+### Data vs System
+- Data is large, user-owned, and frequently changing
+- System config is small, critical, and permission-sensitive
+
+### Privilege Separation
+- User backup avoids unnecessary root usage
+- System backup uses root where required
+
+### Recovery Model
+
+This enables three recovery paths:
+
+#### File-level restore
+```
+/mnt/backup/system/snapshots/YYYY-MM-DD/
+```
+
+#### System rebuild
+- reinstall Ubuntu
+- restore `/etc` and `/home/ian`
+
+#### Data restore
+```
+/mnt/backup/current/
+```
+
+---
+
+## ⚠️ Limitations
+
+This is a **single-location backup system**:
+
+Protected:
+- disk failure
+- accidental deletion
+- configuration mistakes
+
+Not protected:
 - theft
 - fire
-- total-machine loss
-- simultaneous failure or loss of both local disks
-
----
-
-## 🌍 External Exposure Model
-
-### Publicly Reachable
-- `boener.duckdns.org` → publicly accessible through Caddy and Flask
-
-### Public DNS but Intentionally Blocked
-- `jellyboen.duckdns.org` → publicly resolvable, but external clients are denied by Caddy
-
-This is an intentional pattern:
-- valid public hostnames and certificates still exist
-- local access remains simple
-- Jellyfin is not actually exposed to the internet
-
----
-
-## 🔁 Background Automation
-
-### DuckDNS
-- Dynamic DNS updates are handled by a script run from cron
-- Update frequency: every 5 minutes
-
-This keeps public DNS aligned with the current WAN IP.
-
-### Backup Cron
-- Daily backup runs at 3:00 AM local server time via user crontab
-- Backup retention is enforced from the same script
-
----
-
-## ⚠️ Constraints / Risks
-
-- Backup is local only (no offsite / disaster recovery)
-- No redundancy (single primary data disk; single backup disk)
-- Laptop hardware (thermal + longevity concerns)
-- USB NIC dependency
-- Password SSH remains enabled for recovery convenience
-- Network addressing is temporarily in a transitional state during the NIC / DHCP reservation cleanup
-
----
-
-## 🧠 System Characterization
-
-This system is best described as:
-
-> A multi-service home server built on consumer hardware,
-> using modern web architecture (reverse proxy + HTTPS),
-> with strong networking fundamentals, remote-first administration,
-> and intentionally low production expectations.
+- catastrophic system loss
+- simultaneous failure of both disks
 
 ---
 
 ## 🧾 Changelog
 
 ### 2026-04-20
-- Added dedicated external backup disk at `/mnt/backup`
-- Documented ext4 backup mount using UUID-based `fstab` entry
-- Added local snapshot backup model (`current` + dated `snapshots`)
-- Documented backup automation via `/home/ian/backup.sh` and daily cron job
-- Documented 14-day snapshot retention policy
-- Recorded timezone change from UTC to `America/Phoenix` for human-friendly snapshot naming
-- Clarified backup protects against local disk failure but is not offsite protection
-- Clarified dual-NIC model (active USB + disconnected standby built-in NIC)
-- Documented fallback interface as manual recovery path (not failover)
-- Added explicit explanation of "configured but normally unplugged" behavior
-- Added operational posture and access model
-- Documented SSH fallback strategy and admin workflow
-- Clarified current static-IP transition state after NIC change
-- Documented Pi-hole / Google WiFi DNS visibility behavior
-- Added verified runtime facts for Caddy, Jellyfin, and Flask
-- Added Samba share definitions
-- Added storage permission model and guidance
-- Added external exposure model and DuckDNS automation note
+- Added dual-layer backup system (data + system)
+- Introduced root-level system backup script
+- Added `/etc` and `/home/ian` to backup scope
+- Implemented privilege-separated backup design
+- Added staggered cron scheduling (3:00 / 3:30)
 
 ### 2026-04-19
-- Converted document into canonical “living doc” format
-- Expanded architecture explanation
-- Added network + request flow clarity
-- Reflected USB gigabit adapter as primary NIC
-- Formalized Caddy as central system component
+- Initial documentation system created
