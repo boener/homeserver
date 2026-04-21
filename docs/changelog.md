@@ -1,6 +1,11 @@
 # 🧾 Changelog
 
 ## 2026-04-20
+- Expanded backup system to dual-layer model (data + system)
+- Added root-level system backup script for `/etc` and `/home/ian`
+- Introduced privilege-separated backup architecture
+- Added staggered cron scheduling (3:00 data, 3:30 system)
+- Improved recovery model (file-level restore, system rebuild, full data restore)
 - Added local snapshot backup system and external backup disk
 - Implemented daily automated backups and retention policy
 - Changed system timezone to America/Phoenix
