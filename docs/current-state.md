@@ -24,7 +24,8 @@ It is intentionally:
 
 ### Storage
 - 512GB SSD → OS (`/`)
-- 1TB HDD → `/mnt/storage`
+- 1TB HDD → primary data (`/mnt/storage`)
+- 1TB external USB drive → local backup target (`/mnt/backup`)
 
 ### Networking
 - ❌ Built-in NIC (enp1s0): 10/100 (configured, normally disconnected)
@@ -278,7 +279,7 @@ Dynamic backend / experimentation service.
 
 ## 💾 Storage
 
-### Mount
+### Primary Data Mount
 - `/mnt/storage` (ext4)
 
 ### Access
@@ -323,6 +324,54 @@ Current setup is intentionally more permissive for ease of use and learning.
 
 ---
 
+## 💽 Backup System
+
+### Backup Mount
+- `/mnt/backup` (ext4)
+- Mounted persistently through `/etc/fstab` using filesystem UUID
+- Backup filesystem owned by `ian:ian` so scheduled jobs can write without `sudo`
+
+### Backup Strategy
+- Local snapshot-style backups stored on a dedicated external 1TB USB drive
+- `current/` acts as the latest mirror of `/mnt/storage`
+- `snapshots/` contains dated point-in-time copies created with hard links
+- This is a **local backup**, not redundancy and not offsite protection
+
+### Snapshot Layout
+- `/mnt/backup/current`
+- `/mnt/backup/snapshots/YYYY-MM-DD`
+
+Each snapshot is browseable like a normal folder.
+Unchanged files are hard-linked, so repeated snapshots do not fully duplicate disk usage.
+
+### Automation
+Backup job is driven by Ian's user crontab:
+
+- `0 3 * * * /home/ian/backup.sh`
+
+### Backup Script
+- Path: `/home/ian/backup.sh`
+- Sync step updates `current/` from `/mnt/storage`
+- Snapshot step creates a dated hard-link snapshot from `current/`
+- Retention policy removes snapshot directories older than 14 days
+
+### Timezone
+- Server timezone set to `America/Phoenix`
+- This was changed from `Etc/UTC` so snapshot names match the user's local day and cron timing is human-friendly
+
+### Operational Meaning
+This setup protects primarily against:
+- failure of the primary `/mnt/storage` disk
+- accidental deletes or bad changes discovered within the retention window
+
+It does **not** protect against:
+- theft
+- fire
+- total-machine loss
+- simultaneous failure or loss of both local disks
+
+---
+
 ## 🌍 External Exposure Model
 
 ### Publicly Reachable
@@ -346,12 +395,16 @@ This is an intentional pattern:
 
 This keeps public DNS aligned with the current WAN IP.
 
+### Backup Cron
+- Daily backup runs at 3:00 AM local server time via user crontab
+- Backup retention is enforced from the same script
+
 ---
 
 ## ⚠️ Constraints / Risks
 
-- No backup system (data risk)
-- No redundancy (single disk failure = data loss)
+- Backup is local only (no offsite / disaster recovery)
+- No redundancy (single primary data disk; single backup disk)
 - Laptop hardware (thermal + longevity concerns)
 - USB NIC dependency
 - Password SSH remains enabled for recovery convenience
@@ -373,6 +426,13 @@ This system is best described as:
 ## 🧾 Changelog
 
 ### 2026-04-20
+- Added dedicated external backup disk at `/mnt/backup`
+- Documented ext4 backup mount using UUID-based `fstab` entry
+- Added local snapshot backup model (`current` + dated `snapshots`)
+- Documented backup automation via `/home/ian/backup.sh` and daily cron job
+- Documented 14-day snapshot retention policy
+- Recorded timezone change from UTC to `America/Phoenix` for human-friendly snapshot naming
+- Clarified backup protects against local disk failure but is not offsite protection
 - Clarified dual-NIC model (active USB + disconnected standby built-in NIC)
 - Documented fallback interface as manual recovery path (not failover)
 - Added explicit explanation of "configured but normally unplugged" behavior
