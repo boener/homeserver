@@ -1,6 +1,9 @@
 # 🧾 Changelog
 
 ## 2026-04-20
+- Refined backup directory structure (`/mnt/backup/storage` vs `/mnt/backup/system`)
+- Updated storage backup script to use new path
+- Improved safety and isolation between backup types
 - Expanded backup system to dual-layer model (data + system)
 - Added root-level system backup script for `/etc` and `/home/ian`
 - Introduced privilege-separated backup architecture
