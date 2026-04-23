@@ -116,8 +116,8 @@ Primary risks here are:
 ## 🔐 Security Notes
 
 - SMTP credentials live in Gmail configuration / account settings
-- credentials should **not** be stored in the repo
 - this setup is appropriate for light personal use, not sensitive transactional mail
+- Hint: Recovery email for SMTP2GO is non-personal
 
 ---
 
