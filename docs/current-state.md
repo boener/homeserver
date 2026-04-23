@@ -1,6 +1,54 @@
 # 🧠 Home Server – Current State
 
-_Last updated: 2026-04-20_
+_Last updated: 2026-04-22_
+
+---
+
+## 🌐 Networking
+
+### DHCP Model
+- DHCP is provided by the **Google WiFi router**
+- The server operates as a **DHCP client**
+- A **DHCP reservation** is configured on the router to assign:
+  - `192.168.86.53` → server (via USB gigabit adapter MAC)
+
+### Current Behavior
+- Server successfully receives `192.168.86.53` via DHCP (dynamic lease)
+- Reservation is now functioning correctly
+- Default route is via:
+  - `192.168.86.1` (router)
+  - Interface: `enx6c6e072bdc14`
+
+### Interfaces
+- `enx6c6e072bdc14` (USB gigabit adapter)
+  - Primary interface
+  - Active and in use
+
+- `enp1s0` (onboard ethernet)
+  - Configured for DHCP
+  - Physically disconnected
+  - Retained as **failover / recovery interface**
+
+### Design Decision
+The onboard NIC remains configured but unplugged intentionally to allow:
+- emergency physical reconnection
+- recovery access without needing console/keyboard
+
+This introduces a theoretical dual-DHCP risk if both are connected,
+but is considered acceptable given controlled usage.
+
+### Previous Issue (Resolved)
+- Router previously issued incorrect IP (`.22`) despite reservation
+- Likely caused by:
+  - stale DHCP lease
+  - interface/MAC mismatch
+- Temporary workaround used:
+  - static IP assignment on server
+
+### Resolution
+- Re-enabled DHCP on server
+- Router now correctly honors reservation
+- Static configuration removed
 
 ---
 
@@ -105,4 +153,3 @@ creates a clear boundary and reduces risk.
 - Refined backup structure to separate `/mnt/backup/storage` and `/mnt/backup/system`
 - Updated storage backup script to use new path
 - Improved safety against accidental deletion
-
