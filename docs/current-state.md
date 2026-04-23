@@ -104,6 +104,9 @@ The system uses a custom dynamic DNS updater:
   - redundancy experiments
 - Not part of primary routing path
 
+Reference:
+- See `docs/services/cloudflare-ddns.md` for full configuration, script behavior, and operational details
+
 ---
 
 ## 💽 Backup System
