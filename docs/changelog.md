@@ -1,6 +1,19 @@
 # 🧾 Changelog
 
 ## 2026-04-22
+- Migrated primary DNS from DuckDNS to Cloudflare
+- Registered and configured `ianboen.com` domain
+- Implemented custom Cloudflare dynamic DNS updater (`cloudflare-ddns.sh`)
+- Added secure credential storage (`~/.cloudflare/ddns.env`) with restricted permissions
+- Scheduled automated DDNS updates via cron (every 5 minutes)
+- Updated Caddy configuration to serve `ianboen.com` and `www.ianboen.com`
+- Successfully issued Let's Encrypt certificates for new domain via Caddy
+- Verified full public request path: Internet → Cloudflare → Router → Caddy → Flask
+- Updated architecture to reflect Cloudflare as primary DNS provider
+- Retained DuckDNS as fallback / legacy access path
+- Added `docs/services/cloudflare-ddns.md` for ongoing DNS management and future expansion
+
+## 2026-04-22
 - Restored DHCP-based networking on server (removed static IP workaround)
 - Confirmed router DHCP reservation correctly assigns `192.168.86.53`
 - Documented previous DHCP lease conflict issue and resolution
