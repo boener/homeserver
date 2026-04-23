@@ -1,6 +1,21 @@
 # 🧾 Changelog
 
 ## 2026-04-22
+- Added Cloudflare subdomains `jellyfin.ianboen.com` and `cloud.ianboen.com`
+- Extended Cloudflare DDNS script to manage additional DNS records
+- Integrated new records into secure config (`ddns.env`)
+- Updated Caddy routing to:
+  - expose Jellyfin publicly via `jellyfin.ianboen.com`
+  - maintain LAN-restricted access via `jellyboen.duckdns.org`
+  - add placeholder route for `cloud.ianboen.com`
+- Implemented split-horizon DNS in Pi-hole for all primary hostnames
+- Enabled Cloudflare proxy (orange cloud) for `jellyfin.ianboen.com`
+- Configured Cloudflare SSL mode to **Full (strict)**
+- Updated DDNS script to preserve proxy mode for Jellyfin record
+- Verified full public path: Client → Cloudflare → Router → Caddy → Jellyfin
+- Maintained DNS-only mode for primary domain to preserve observability during development
+
+## 2026-04-22
 - Migrated primary DNS from DuckDNS to Cloudflare
 - Registered and configured `ianboen.com` domain
 - Implemented custom Cloudflare dynamic DNS updater (`cloudflare-ddns.sh`)
