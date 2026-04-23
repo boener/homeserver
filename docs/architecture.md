@@ -26,17 +26,26 @@ Each layer has a distinct role.
 This is the public-facing edge of the system.
 
 Components:
-- DuckDNS
+- Cloudflare DNS
+- Cloudflare-managed domain (`ianboen.com`)
+- DuckDNS (fallback / legacy)
 - Public DNS resolution
 - Inbound internet traffic
 
 Role:
 - gives the system stable public names even though the WAN IP may change
 - allows public clients to find the home network
+- separates authoritative DNS management from the server itself
+
+Current model:
+- `ianboen.com` and `www.ianboen.com` are the **primary public hostnames**
+- Cloudflare is the authoritative DNS provider for the primary domain
+- the server updates Cloudflare A records via API using a custom DDNS script
+- DuckDNS remains available as a fallback / legacy access path
 
 Key idea:
 The internet does **not** connect directly to Flask or Jellyfin.
-It connects to a hostname, which eventually routes toward the home network.
+It connects to a hostname, which resolves through Cloudflare (or DuckDNS for fallback cases), and eventually routes toward the home network.
 
 ---
 
