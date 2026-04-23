@@ -58,6 +58,10 @@ but is considered acceptable given controlled usage.
 - `ianboen.com`
 - `www.ianboen.com`
 
+### Additional Cloudflare Hostnames
+- `jellyfin.ianboen.com`
+- `cloud.ianboen.com`
+
 ### DNS Provider
 - **Cloudflare (primary)**
 - DuckDNS retained as **fallback / legacy**
@@ -74,14 +78,19 @@ The system uses a custom dynamic DNS updater:
   - contains:
     - API token
     - Zone ID
-    - DNS record IDs
+    - DNS record IDs for root, `www`, `jellyfin`, and `cloud`
 
 ### Behavior
 - Script fetches current public IP via:
   - `curl ifconfig.me`
-- Updates both:
-  - root domain (`ianboen.com`)
-  - `www` subdomain
+- Updates:
+  - `ianboen.com`
+  - `www.ianboen.com`
+  - `jellyfin.ianboen.com`
+  - `cloud.ianboen.com`
+- Proxy behavior is record-specific:
+  - `jellyfin.ianboen.com` is updated with Cloudflare proxying enabled
+  - `ianboen.com`, `www.ianboen.com`, and `cloud.ianboen.com` remain DNS only
 
 ### Automation
 ```cron
@@ -91,9 +100,20 @@ The system uses a custom dynamic DNS updater:
 - Runs every 5 minutes
 - Silent execution (no cron spam)
 
+### Local DNS (Pi-hole)
+Pi-hole local DNS overrides point these hostnames directly to the server's LAN IP:
+- `ianboen.com` → `192.168.86.53`
+- `www.ianboen.com` → `192.168.86.53`
+- `jellyfin.ianboen.com` → `192.168.86.53`
+- `cloud.ianboen.com` → `192.168.86.53`
+
+This preserves split-horizon behavior so local clients avoid hairpinning through the WAN path.
+
 ### Design Notes
 - Cloudflare replaces DuckDNS as the **authoritative DNS provider**
 - Dynamic DNS is now fully self-managed
+- `jellyfin.ianboen.com` is the current Cloudflare proxy experiment surface
+- The main site remains DNS only for simpler debugging and clearer observability
 - Record-level updates avoid unnecessary API calls to unrelated entries
 
 ### DuckDNS Status
@@ -106,6 +126,24 @@ The system uses a custom dynamic DNS updater:
 
 Reference:
 - See `docs/services/cloudflare-ddns.md` for full configuration, script behavior, and operational details
+
+---
+
+## 🌐 Web Entry / Routing
+
+### Caddy Public Routes
+- `ianboen.com`, `www.ianboen.com` → Flask (`127.0.0.1:5000`)
+- `jellyfin.ianboen.com` → Jellyfin (`127.0.0.1:8096`)
+- `cloud.ianboen.com` → intentional placeholder response (`404 Not configured yet`)
+
+### Caddy Legacy / Restricted Routes
+- `boener.duckdns.org` → Flask (`127.0.0.1:5000`)
+- `jellyboen.duckdns.org` → Jellyfin (`127.0.0.1:8096`) with LAN-only restriction
+
+### TLS / Cloudflare Notes
+- Caddy has successfully issued certificates for the Cloudflare hostnames
+- `jellyfin.ianboen.com` is currently proxied through Cloudflare
+- Cloudflare SSL/TLS mode for the proxied hostname is set to **Full (strict)**
 
 ---
 
