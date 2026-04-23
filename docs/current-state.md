@@ -28,7 +28,7 @@ _Last updated: 2026-04-22_
   - Configured for DHCP
   - Physically disconnected
   - Retained as **failover / recovery interface**
-
+ 
 ### Design Decision
 The onboard NIC remains configured but unplugged intentionally to allow:
 - emergency physical reconnection
@@ -49,6 +49,57 @@ but is considered acceptable given controlled usage.
 - Re-enabled DHCP on server
 - Router now correctly honors reservation
 - Static configuration removed
+
+---
+
+## 🌍 DNS & Domain (Cloudflare)
+
+### Primary Domain
+- `ianboen.com`
+- `www.ianboen.com`
+
+### DNS Provider
+- **Cloudflare (primary)**
+- DuckDNS retained as **fallback / legacy**
+
+### Dynamic DNS (Cloudflare)
+
+The system uses a custom dynamic DNS updater:
+
+- Script:
+  - `/home/ian/cloudflare-ddns.sh`
+
+- Config:
+  - `~/.cloudflare/ddns.env`
+  - contains:
+    - API token
+    - Zone ID
+    - DNS record IDs
+
+### Behavior
+- Script fetches current public IP via:
+  - `curl ifconfig.me`
+- Updates both:
+  - root domain (`ianboen.com`)
+  - `www` subdomain
+
+### Automation
+*/5 * * * * /home/ian/cloudflare-ddns.sh >/dev/null 2>&1
+- Runs every 5 minutes
+- Silent execution (no cron spam)
+
+### Design Notes
+- Cloudflare replaces DuckDNS as the **authoritative DNS provider**
+- Dynamic DNS is now fully self-managed
+- Record-level updates avoid unnecessary API calls to unrelated entries
+
+### DuckDNS Status
+- Still configured and functional
+- Used for:
+  - fallback access
+  - testing
+  - redundancy experiments
+- Not part of primary routing path
 
 ---
 
