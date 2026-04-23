@@ -75,57 +75,102 @@ The system uses a custom dynamic DNS updater:
 
 - Config:
   - `~/.cloudflare/ddns.env`
-  - contains:
-    - API token
-    - Zone ID
-    - DNS record IDs for root, `www`, `jellyfin`, and `cloud`
 
 ### Behavior
 - Script fetches current public IP via:
   - `curl ifconfig.me`
-- Updates:
-  - `ianboen.com`
-  - `www.ianboen.com`
-  - `jellyfin.ianboen.com`
-  - `cloud.ianboen.com`
-- Proxy behavior is record-specific:
-  - `jellyfin.ianboen.com` is updated with Cloudflare proxying enabled
-  - `ianboen.com`, `www.ianboen.com`, and `cloud.ianboen.com` remain DNS only
+- Updates relevant Cloudflare records
 
 ### Automation
 ```cron
 */5 * * * * /home/ian/cloudflare-ddns.sh >/dev/null 2>&1
 ```
 
-- Runs every 5 minutes
-- Silent execution (no cron spam)
+---
 
-### Local DNS (Pi-hole)
-Pi-hole local DNS overrides point these hostnames directly to the server's LAN IP:
-- `ianboen.com` → `192.168.86.53`
-- `www.ianboen.com` → `192.168.86.53`
-- `jellyfin.ianboen.com` → `192.168.86.53`
-- `cloud.ianboen.com` → `192.168.86.53`
+## 📧 Email (Domain Mail Handling)
 
-This preserves split-horizon behavior so local clients avoid hairpinning through the WAN path.
+### Overview
+Custom domain email for `ian@ianboen.com` is implemented using **external providers**, not the home server.
 
-### Design Notes
-- Cloudflare replaces DuckDNS as the **authoritative DNS provider**
-- Dynamic DNS is now fully self-managed
-- `jellyfin.ianboen.com` is the current Cloudflare proxy experiment surface
-- The main site remains DNS only for simpler debugging and clearer observability
-- Record-level updates avoid unnecessary API calls to unrelated entries
+The system provides normal send/receive behavior while avoiding the complexity of self-hosting mail.
 
-### DuckDNS Status
-- Still configured and functional
-- Used for:
-  - fallback access
-  - testing
-  - redundancy experiments
-- Not part of primary routing path
+---
 
-Reference:
-- See `docs/services/cloudflare-ddns.md` for full configuration, script behavior, and operational details
+### Inbound Mail
+
+Handled by **Cloudflare Email Routing**:
+
+```text
+Internet sender → Cloudflare → Gmail inbox
+```
+
+- Emails sent to `ian@ianboen.com` are forwarded to:
+  - `ian.boen@gmail.com`
+- No mail services are exposed on the home network
+
+---
+
+### Outbound Mail
+
+Handled via **SMTP2GO** configured inside Gmail:
+
+```text
+Gmail → SMTP2GO → recipient
+```
+
+- Gmail is configured with a “Send mail as” identity:
+  - `ian@ianboen.com`
+- SMTP2GO handles actual delivery to the internet
+
+---
+
+### Capability
+
+The address `ian@ianboen.com` now:
+
+- sends and receives email normally through Gmail
+- behaves as a standard mailbox from the user perspective
+
+---
+
+### DNS Impact
+
+Cloudflare DNS now includes additional records required for SMTP2GO setup:
+
+- CNAME records for provider verification and/or DKIM
+
+Exact values are managed directly in Cloudflare.
+
+---
+
+### Design Decision
+
+This approach was chosen to avoid:
+
+- running a local SMTP server
+- exposing mail ports
+- dealing with IP reputation and spam filtering from a residential IP
+
+The system intentionally keeps email **out of the home server’s responsibility**.
+
+---
+
+### Account / Credential Notes
+
+- SMTP2GO account is tied to an external account (non-personal email used during setup)
+- Credentials are stored in Gmail configuration
+- Credentials should be recoverable via the provider account if needed
+
+---
+
+### Risks / Future Work
+
+- free-tier limits may change
+- deliverability may require:
+  - SPF
+  - DKIM
+  - DMARC tuning
 
 ---
 
@@ -134,16 +179,6 @@ Reference:
 ### Caddy Public Routes
 - `ianboen.com`, `www.ianboen.com` → Flask (`127.0.0.1:5000`)
 - `jellyfin.ianboen.com` → Jellyfin (`127.0.0.1:8096`)
-- `cloud.ianboen.com` → intentional placeholder response (`404 Not configured yet`)
-
-### Caddy Legacy / Restricted Routes
-- `boener.duckdns.org` → Flask (`127.0.0.1:5000`)
-- `jellyboen.duckdns.org` → Jellyfin (`127.0.0.1:8096`) with LAN-only restriction
-
-### TLS / Cloudflare Notes
-- Caddy has successfully issued certificates for the Cloudflare hostnames
-- `jellyfin.ianboen.com` is currently proxied through Cloudflare
-- Cloudflare SSL/TLS mode for the proxied hostname is set to **Full (strict)**
 
 ---
 
@@ -155,96 +190,9 @@ The system uses a **two-layer backup architecture** with explicit directory sepa
 - `/mnt/backup/storage` → data backups (user)
 - `/mnt/backup/system` → system backups (root)
 
-This prevents accidental cross-deletion and keeps responsibilities clearly isolated.
-
----
-
-## 📦 Data Backup (User)
-
-### Scope
-- `/mnt/storage`
-
-### Ownership
-- Runs as user `ian`
-
-### Structure
-```
-/mnt/backup/storage/
-├── current/
-└── snapshots/YYYY-MM-DD/
-```
-
-### Script
-- `/home/ian/backup.sh`
-
-### Behavior
-- `rsync -a --delete` syncs data into `current/`
-- `cp -al` creates snapshot using hard links
-- retention: ~14 days
-
-### Automation
-```
-0 3 * * * /home/ian/backup.sh
-```
-
----
-
-## ⚙️ System Backup (Root)
-
-### Scope
-- `/etc`
-- `/home/ian`
-
-### Ownership
-- Runs as `root`
-
-### Structure
-```
-/mnt/backup/system/
-├── current/
-│   ├── etc/
-│   └── home-ian/
-└── snapshots/YYYY-MM-DD/
-```
-
-### Script
-- `/usr/local/sbin/system-backup.sh`
-
-### Behavior
-- `rsync -a --delete` for system files
-- snapshot via `cp -al`
-- replaces same-day snapshot if rerun
-- retention: ~14 days
-
-### Automation
-```
-30 3 * * * /usr/local/sbin/system-backup.sh
-```
-
----
-
-## 🧠 Design Notes
-
-### Why the `storage/` subdirectory was introduced
-Originally, data backups lived directly under `/mnt/backup/`, which made it easy to:
-- accidentally delete the entire backup tree
-- mix system and data backup concerns
-
-Moving to:
-```
-/mnt/backup/storage/
-```
-creates a clear boundary and reduces risk.
-
-### Failure Mode Prevented
-- accidental deletion of `/mnt/backup/*` no longer destroys both backup systems
-- system backups remain intact even if storage backup is misconfigured
-
 ---
 
 ## 🧾 Changelog
 
 ### 2026-04-20
 - Refined backup structure to separate `/mnt/backup/storage` and `/mnt/backup/system`
-- Updated storage backup script to use new path
-- Improved safety against accidental deletion
