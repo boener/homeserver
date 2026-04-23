@@ -93,6 +93,9 @@ Current pattern:
 Key idea:
 The same hostname can lead to different network paths depending on where the client is located.
 
+Reference:
+- See `docs/services/cloudflare-ddns.md` for implementation details of Cloudflare DNS and dynamic updates
+
 ---
 
 ### 4. Entry Layer
