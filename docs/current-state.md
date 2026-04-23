@@ -28,7 +28,7 @@ _Last updated: 2026-04-22_
   - Configured for DHCP
   - Physically disconnected
   - Retained as **failover / recovery interface**
- 
+
 ### Design Decision
 The onboard NIC remains configured but unplugged intentionally to allow:
 - emergency physical reconnection
@@ -84,7 +84,10 @@ The system uses a custom dynamic DNS updater:
   - `www` subdomain
 
 ### Automation
+```cron
 */5 * * * * /home/ian/cloudflare-ddns.sh >/dev/null 2>&1
+```
+
 - Runs every 5 minutes
 - Silent execution (no cron spam)
 
