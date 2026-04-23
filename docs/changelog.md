@@ -1,5 +1,12 @@
 # 🧾 Changelog
 
+## 2026-04-22
+- Restored DHCP-based networking on server (removed static IP workaround)
+- Confirmed router DHCP reservation correctly assigns `192.168.86.53`
+- Documented previous DHCP lease conflict issue and resolution
+- Clarified dual-interface strategy (USB primary + onboard fallback)
+- Updated `current-state.md` with full networking model and design rationale
+
 ## 2026-04-20
 - Refined backup directory structure (`/mnt/backup/storage` vs `/mnt/backup/system`)
 - Updated storage backup script to use new path
