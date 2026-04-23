@@ -1,6 +1,11 @@
 # 🧾 Changelog
 
 ## 2026-04-22
+- Added SMTP2GO for outbound email via Gmail
+- Added CNAME records in Cloudflare for SMTP2GO verification
+- Configured Gmail to send mail as `ian@ianboen.com` via SMTP2GO
+
+## 2026-04-22
 - Added Cloudflare subdomains `jellyfin.ianboen.com` and `cloud.ianboen.com`
 - Extended Cloudflare DDNS script to manage additional DNS records
 - Integrated new records into secure config (`ddns.env`)
