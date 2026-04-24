@@ -1,5 +1,35 @@
 # 🧾 Changelog
 
+## 2026-04-24 — Cowrie SSH Honeypot Deployed
+
+### Added
+- Deployed Cowrie SSH honeypot in Docker
+- Exposed honeypot on host port 2222 (safe non-standard port)
+- Implemented persistent logging to host filesystem
+- Capturing:
+  - login attempts (username/password)
+  - interactive shell commands
+  - session metadata
+- Added persistent storage for:
+  - logs (`~/cowrie/log`)
+  - downloads (`~/cowrie/downloads`)
+  - TTY session recordings (`~/cowrie/tty`)
+
+### Fixed
+- Resolved container restart loop caused by incorrect bind mounts overriding Cowrie internal filesystem
+- Resolved permission errors preventing log and session file creation
+
+### Verified
+- Local SSH access to honeypot
+- LAN access from external devices
+- Full interactive fake shell behavior
+- Command logging in `cowrie.json`
+
+### Notes
+- Real SSH service remains untouched and separate
+- Honeypot is not yet exposed to the internet (no router port forwarding configured)
+- Future work: expose safely, build live UI from JSON logs
+
 ## 2026-04-22
 - Added SMTP2GO for outbound email via Gmail
 - Added CNAME records in Cloudflare for SMTP2GO verification
