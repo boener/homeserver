@@ -39,17 +39,8 @@ Role:
 - separates authoritative DNS management from the server itself
 - keeps email handling external to the home server
 
-Current model:
-- `ianboen.com` and `www.ianboen.com` are the **primary public hostnames** for the Flask app
-- `jellyfin.ianboen.com` is a Cloudflare-managed public hostname for Jellyfin
-- `cloud.ianboen.com` exists as a Cloudflare-managed placeholder hostname and currently serves a stub response
-- Cloudflare is the authoritative DNS provider for the primary domain
-- the server updates Cloudflare A records via API using a custom DDNS script
-- DuckDNS remains available as a fallback / legacy access path
-
 Key idea:
-The internet does **not** connect directly to Flask or Jellyfin.
-It connects to a hostname, which resolves through Cloudflare (or DuckDNS for fallback cases), and eventually routes toward the home network.
+The internet connects to **multiple ingress paths**, not just the web stack.
 
 ---
 
@@ -60,17 +51,13 @@ Components:
 - Fiber modem / ONT
 - Google WiFi router
 - LAN subnet (`192.168.86.x`)
-- Switch
 
 Role:
 - provides NAT, routing, DHCP, and port forwarding
 - delivers public inbound traffic to the correct internal host
-- connects internal devices to each other
 
-Current model:
-- modem forwards traffic via DMZ to Google WiFi
-- Google WiFi behaves as the primary practical router
-- Google WiFi forwards ports `80` and `443` to the server
+Key idea:
+The router determines which *type of traffic* goes to which internal service.
 
 ---
 
@@ -80,157 +67,149 @@ This is the naming and resolution layer.
 Components:
 - Pi-hole
 - local DNS overrides
-- Cloudflare public DNS (primary)
-- DuckDNS (fallback records)
+- Cloudflare public DNS
+- DuckDNS (fallback)
 
 Role:
 - resolves names for LAN clients
-- provides ad blocking
-- creates split-horizon behavior
-
-Current pattern:
-- inside the LAN, primary hostnames (`ianboen.com`, `www.ianboen.com`, `jellyfin.ianboen.com`, `cloud.ianboen.com`) resolve to the server's LAN IP (`192.168.86.53`)
-- fallback hostnames (`*.duckdns.org`) also resolve locally via overrides
-- outside the LAN, primary hostnames resolve via Cloudflare to the WAN IP
-- DuckDNS remains available as a secondary resolution path
-
-Key idea:
-The same hostname can lead to different network paths depending on where the client is located.
-
-Reference:
-- See `docs/services/cloudflare-ddns.md` for implementation details of Cloudflare DNS and dynamic updates
+- enables split-horizon DNS
 
 ---
 
-### 4. Entry Layer
-This is the single web entry point into the server.
+### 4. Entry Layer (Web Stack)
 
 Component:
 - Caddy
 
 Role:
-- accepts incoming HTTP / HTTPS traffic
+- handles HTTP / HTTPS only
 - terminates TLS
-- selects the correct backend based on hostname
-- enforces some access-control rules
-- serves placeholder responses for unfinished hostnames
-
-Current routing:
-- `ianboen.com`, `www.ianboen.com` → Flask backend (primary)
-- `jellyfin.ianboen.com` → Jellyfin backend (public)
-- `cloud.ianboen.com` → stub / placeholder response (`not configured yet`)
-- `boener.duckdns.org` → Flask backend (fallback)
-- `jellyboen.duckdns.org` → Jellyfin backend (LAN-restricted fallback)
+- routes based on hostname
 
 Key idea:
-Caddy is the front door.
+Caddy is the **web entry point**, not the only entry point into the system.
 
 ---
 
-### 5. Application Layer
-Components:
-- Flask (public app)
-- Jellyfin (public via `jellyfin.ianboen.com`, LAN-restricted via DuckDNS fallback)
-- placeholder web response for `cloud.ianboen.com`
+### 5. Parallel Ingress: Honeypot Layer
 
-Notes:
-- the primary website and Jellyfin are both reverse-proxied through Caddy
-- the `cloud.ianboen.com` hostname currently exists only as a reserved entry point and does not yet map to a real application
-
----
-
-### 6. Email Handling Layer (External to Server)
-Email for the domain is intentionally **not** hosted on the home server.
-
-Components:
-- Cloudflare Email Routing (inbound)
-- Gmail mailbox / identity configuration
-- SMTP2GO (outbound delivery)
+Component:
+- Cowrie (Docker container)
 
 Role:
-- receives mail for `ian@ianboen.com`
-- lets Gmail send mail as the custom domain
-- avoids exposing SMTP/IMAP services from the house
+- receives SSH traffic intended for attackers/bots
+- simulates a vulnerable system
+- captures behavior for analysis and display
 
-Current model:
-- inbound mail path: `Internet sender → Cloudflare Email Routing → Gmail inbox`
-- outbound mail path: `Gmail → SMTP2GO → recipient`
-- Cloudflare DNS contains the additional records needed for SMTP2GO verification and/or DKIM
+Architecture:
+
+```text
+Internet TCP/22
+    → Router port forward
+    → 192.168.86.53:2222
+    → Cowrie container (2222)
+```
 
 Key idea:
-Email is part of the domain architecture, but **not part of the home server runtime**.
+- This path **bypasses Caddy entirely**
+- It is intentionally exposed to hostile traffic
+- It is not part of the normal application stack
 
 ---
 
-## 🔁 Request Lifecycle
+### 6. Application Layer
 
-### A. Public Request Path (Primary Website)
-Example: `https://ianboen.com`
+Components:
+- Flask (public app)
+- Jellyfin
 
-1. DNS resolves via Cloudflare
-2. Request hits WAN IP
-3. Router forwards to server
-4. Caddy terminates TLS
-5. Request proxied to Flask
+Additional role:
+- Flask will act as a **presentation layer** for Cowrie data
 
----
+Data flow:
 
-### B. Public Request Path (Jellyfin)
-Example: `https://jellyfin.ianboen.com`
+```text
+Cowrie → JSON logs → Flask → Website UI
+```
 
-1. DNS resolves via Cloudflare
-2. Request hits WAN IP
-3. Router forwards to server
-4. Caddy terminates TLS
-5. Request proxied to Jellyfin
+Key idea:
+Flask is both:
+- a normal web app
+- a consumer of honeypot data
 
 ---
 
-### C. Local Request Path
-Example: LAN client → `https://ianboen.com`
+### 7. Email Handling Layer (External)
 
-1. Pi-hole resolves to LAN IP
-2. Client connects directly to Caddy
-3. Caddy routes to backend
+Components:
+- Cloudflare Email Routing
+- Gmail
+- SMTP2GO
 
----
-
-### D. Placeholder Host Path
-Example: `https://cloud.ianboen.com`
-
-1. DNS resolves via Cloudflare
-2. Request hits WAN IP
-3. Router forwards to server
-4. Caddy terminates TLS
-5. Caddy returns a stub response indicating the service is not configured yet
+Role:
+- handles all email outside the home server
 
 ---
 
-### E. Fallback Path (DuckDNS)
-Example: `https://boener.duckdns.org`
+## 🔁 Request / Data Flows
 
-- Same path, but uses DuckDNS for resolution
+### A. Web Traffic (Normal Users)
+
+```text
+Internet → Cloudflare → Router 80/443 → Caddy → Flask/Jellyfin
+```
 
 ---
 
-### F. Email Flow (Separate from Web Traffic)
-Inbound example: mail to `ian@ianboen.com`
+### B. Honeypot Traffic (Attackers)
 
-1. Sender targets domain MX/routing managed externally
-2. Cloudflare Email Routing forwards the message
-3. Message arrives in Gmail inbox
+```text
+Internet → Router 22 → Cowrie
+```
 
-Outbound example: mail sent from Gmail as `ian@ianboen.com`
+- no TLS
+- no Caddy
+- no authentication barrier
+- intentionally exposed
 
-1. User sends from Gmail
-2. Gmail authenticates to SMTP2GO
-3. SMTP2GO delivers to recipient
+---
+
+### C. Honeypot Data Pipeline
+
+```text
+Attacker → Cowrie → cowrie.json → Flask → Browser UI
+```
+
+---
+
+### D. Local Traffic
+
+```text
+LAN client → Pi-hole → Caddy → apps
+```
+
+---
+
+### E. Email Flow
+
+```text
+Internet → Cloudflare Email Routing → Gmail
+Gmail → SMTP2GO → recipient
+```
 
 ---
 
 ## 🎯 Mental Model Summary
 
-- DNS decides **where the client goes**
-- Caddy decides **what service gets the request**
-- the app decides **how it behaves**
-- email for the domain is **externalized** and does not run on the server
+- The system has **multiple ingress paths**:
+  - Web (Caddy)
+  - Honeypot (Cowrie)
+
+- Caddy handles **trusted user traffic**
+- Cowrie handles **untrusted hostile traffic**
+
+- Flask becomes a **bridge**:
+  - serving users
+  - visualizing attacker behavior
+
+- Email remains **external to the system runtime**
