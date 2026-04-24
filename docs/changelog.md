@@ -4,7 +4,7 @@
 
 ### Added
 - Deployed Cowrie SSH honeypot in Docker
-- Exposed honeypot on host port 2222 (safe non-standard port)
+- Exposed honeypot on host port 2222 (container 2222 → host 2222) (safe non-standard port)
 - Implemented persistent logging to host filesystem
 - Capturing:
   - login attempts (username/password)
