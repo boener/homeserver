@@ -1,6 +1,6 @@
 # 🧠 Home Server – Current State
 
-_Last updated: 2026-04-22_
+_Last updated: 2026-04-24_
 
 ---
 
@@ -37,18 +37,54 @@ The onboard NIC remains configured but unplugged intentionally to allow:
 This introduces a theoretical dual-DHCP risk if both are connected,
 but is considered acceptable given controlled usage.
 
-### Previous Issue (Resolved)
-- Router previously issued incorrect IP (`.22`) despite reservation
-- Likely caused by:
-  - stale DHCP lease
-  - interface/MAC mismatch
-- Temporary workaround used:
-  - static IP assignment on server
+---
 
-### Resolution
-- Re-enabled DHCP on server
-- Router now correctly honors reservation
-- Static configuration removed
+## 🕵️ Cowrie SSH Honeypot (Planned External Service)
+
+### Overview
+Cowrie is deployed as a Dockerized SSH honeypot designed to simulate a vulnerable Linux system.
+
+It captures attacker behavior after login, including commands and session activity.
+
+### Current Exposure State
+- Running and accessible on LAN
+- Bound to host port: `2222`
+- Not yet exposed to the internet (no router port forwarding configured)
+
+### Planned Exposure Model
+
+```text
+Internet TCP/22
+    → Router port forward
+    → 192.168.86.53:2222
+    → Cowrie container (2222)
+```
+
+### Behavior
+- Presents fake SSH login prompt
+- Accepts or rejects credentials realistically
+- Provides interactive fake shell
+- Logs:
+  - login attempts
+  - credentials
+  - commands
+  - session metadata
+
+### Data Output
+Primary log file:
+
+```text
+/home/ian/cowrie/log/cowrie.json
+```
+
+Additional captured data:
+- downloaded files
+- full TTY session recordings
+
+### Security Boundary
+- Real SSH service is not exposed through Cowrie
+- Honeypot is isolated via Docker container
+- No router-level exposure yet
 
 ---
 
@@ -65,112 +101,6 @@ but is considered acceptable given controlled usage.
 ### DNS Provider
 - **Cloudflare (primary)**
 - DuckDNS retained as **fallback / legacy**
-
-### Dynamic DNS (Cloudflare)
-
-The system uses a custom dynamic DNS updater:
-
-- Script:
-  - `/home/ian/cloudflare-ddns.sh`
-
-- Config:
-  - `~/.cloudflare/ddns.env`
-
-### Behavior
-- Script fetches current public IP via:
-  - `curl ifconfig.me`
-- Updates relevant Cloudflare records
-
-### Automation
-```cron
-*/5 * * * * /home/ian/cloudflare-ddns.sh >/dev/null 2>&1
-```
-
----
-
-## 📧 Email (Domain Mail Handling)
-
-### Overview
-Custom domain email for `ian@ianboen.com` is implemented using **external providers**, not the home server.
-
-The system provides normal send/receive behavior while avoiding the complexity of self-hosting mail.
-
----
-
-### Inbound Mail
-
-Handled by **Cloudflare Email Routing**:
-
-```text
-Internet sender → Cloudflare → Gmail inbox
-```
-
-- Emails sent to `ian@ianboen.com` are forwarded to:
-  - `ian.boen@gmail.com`
-- No mail services are exposed on the home network
-
----
-
-### Outbound Mail
-
-Handled via **SMTP2GO** configured inside Gmail:
-
-```text
-Gmail → SMTP2GO → recipient
-```
-
-- Gmail is configured with a “Send mail as” identity:
-  - `ian@ianboen.com`
-- SMTP2GO handles actual delivery to the internet
-
----
-
-### Capability
-
-The address `ian@ianboen.com` now:
-
-- sends and receives email normally through Gmail
-- behaves as a standard mailbox from the user perspective
-
----
-
-### DNS Impact
-
-Cloudflare DNS now includes additional records required for SMTP2GO setup:
-
-- CNAME records for provider verification and/or DKIM
-
-Exact values are managed directly in Cloudflare.
-
----
-
-### Design Decision
-
-This approach was chosen to avoid:
-
-- running a local SMTP server
-- exposing mail ports
-- dealing with IP reputation and spam filtering from a residential IP
-
-The system intentionally keeps email **out of the home server’s responsibility**.
-
----
-
-### Account / Credential Notes
-
-- SMTP2GO account is tied to an external account (non-personal email used during setup)
-- Credentials are stored in Gmail configuration
-- Credentials should be recoverable via the provider account if needed
-
----
-
-### Risks / Future Work
-
-- free-tier limits may change
-- deliverability may require:
-  - SPF
-  - DKIM
-  - DMARC tuning
 
 ---
 
@@ -189,10 +119,3 @@ The system uses a **two-layer backup architecture** with explicit directory sepa
 
 - `/mnt/backup/storage` → data backups (user)
 - `/mnt/backup/system` → system backups (root)
-
----
-
-## 🧾 Changelog
-
-### 2026-04-20
-- Refined backup structure to separate `/mnt/backup/storage` and `/mnt/backup/system`
