@@ -1,5 +1,38 @@
 # 🧾 Changelog
 
+## 2026-04-25 — Unified Lid-Aware Backlight Control
+
+### Changed
+- Standardized backlight control across all lab nodes
+- Replaced mixed implementations (systemd timer + custom ACPI scripts) with a single unified model
+
+### Added
+- Created universal backlight control scripts:
+  - `/usr/local/bin/backlight-off`
+  - `/usr/local/bin/backlight-on`
+- Implemented hardware-agnostic backlight detection using `/sys/class/backlight`
+- Installed and configured `acpid` on systems that did not previously support lid events
+
+### Removed
+- Removed legacy systemd service `screenoff.service`
+- Removed old scripts:
+  - `/usr/local/bin/screenoff`
+  - `/usr/local/bin/screenon`
+  - `/usr/local/bin/lid-close-screen-off.sh`
+  - `~/screen`
+- Removed outdated ACPI event configurations
+
+### Standard Behavior
+- Lid closed → backlight off
+- Lid open → no automatic change
+- Reboot with lid open → visible screen for recovery
+- SSH recovery available via `sudo backlight-on`
+
+### Added Documentation
+- `docs/services/backlight-control.md`
+
+---
+
 ## 2026-04-24 — Cowrie Honeypot Behavior Refinement
 
 ### Changed
