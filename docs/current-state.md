@@ -62,7 +62,10 @@ Internet TCP/22
 
 ### Behavior
 - Presents fake SSH login prompt
-- Accepts or rejects credentials realistically
+- Fake hostname currently set to `web-prod-nyc01`
+- Uses explicit `UserDB` authentication through `userdb.txt`
+- Rejects very obvious credentials such as `root/root`, `root/123456`, `root/password`, and `root/admin`
+- Allows most other username/password combinations so bots can enter and interact
 - Provides interactive fake shell
 - Logs:
   - login attempts
@@ -80,6 +83,14 @@ Primary log file:
 Additional captured data:
 - downloaded files
 - full TTY session recordings
+
+### Current Docker Volume Layout
+- Cowrie config volume mounted at container path `/cowrie/cowrie-git/etc`
+- Cowrie runtime volume mounted at container path `/cowrie/cowrie-git/var`
+- Host bind mounts:
+  - `/home/ian/cowrie/log` → `/cowrie/cowrie-git/var/log/cowrie`
+  - `/home/ian/cowrie/downloads` → `/cowrie/cowrie-git/var/lib/cowrie/downloads`
+  - `/home/ian/cowrie/tty` → `/cowrie/cowrie-git/var/lib/cowrie/tty`
 
 ### Security Boundary
 - Real SSH service is not exposed through Cowrie
