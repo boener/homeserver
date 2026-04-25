@@ -1,5 +1,25 @@
 # 🧾 Changelog
 
+## 2026-04-24 — Cowrie Honeypot Behavior Refinement
+
+### Changed
+- Introduced active `cowrie.cfg` override (previously using defaults)
+- Set custom honeypot hostname to `web-prod-nyc01`
+- Enabled explicit `UserDB` authentication mode
+- Created and activated `userdb.txt`
+
+### Improved
+- Authentication realism:
+  - Common weak credentials (`root/root`, `root/123456`, etc.) now fail
+  - Most other credentials succeed to encourage deeper attacker interaction
+- Honeypot now behaves more like a "slightly misconfigured real server" instead of a default demo environment
+
+### Insight
+- Learned that SSH client default key-based auth can interfere with testing Cowrie password behavior
+- Verified correct testing requires forcing password authentication
+
+---
+
 ## 2026-04-24 — Cowrie SSH Honeypot Deployed
 
 ### Added
