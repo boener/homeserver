@@ -2,214 +2,74 @@
 
 ## 🧠 Overview
 
-This document describes the **structural design** of the home server.
+This system now consists of **multiple nodes**, not a single server.
 
-`current-state.md` answers:
-- what exists right now
-- what IPs, services, and paths are in use
+---
 
-This document answers:
-- how the system is organized
-- where responsibilities are divided
-- how requests move through the system
-- where failures are likely to occur
-- why the system is shaped this way
+## 🖥️ Node Layer (New)
+
+### Primary Node: `ubuntu`
+- Hosts all production-facing services
+- Acts as the main application server
+
+### Secondary Node: `macbook`
+- Lab / auxiliary node
+- Used for experimentation, testing, and future service distribution
+
+Key idea:
+The system is evolving from **single-node → multi-node architecture**.
 
 ---
 
 ## 🧱 Layered Architecture
 
-The system is easiest to understand as a stack of layers.
-Each layer has a distinct role.
-
 ### 1. Edge / Internet Layer
-This is the public-facing edge of the system.
-
-Components:
 - Cloudflare DNS
-- Cloudflare-managed domain (`ianboen.com`)
-- Cloudflare Email Routing
-- DuckDNS (fallback / legacy)
-- Public DNS resolution
-- Inbound internet traffic
-
-Role:
-- gives the system stable public names even though the WAN IP may change
-- allows public clients to find the home network
-- separates authoritative DNS management from the server itself
-- keeps email handling external to the home server
-
-Key idea:
-The internet connects to **multiple ingress paths**, not just the web stack.
-
----
+- Public domain (`ianboen.com`)
 
 ### 2. Network Layer
-This is the routing and packet-delivery layer inside the home setup.
-
-Components:
-- Fiber modem / ONT
 - Google WiFi router
-- LAN subnet (`192.168.86.x`)
-
-Role:
-- provides NAT, routing, DHCP, and port forwarding
-- delivers public inbound traffic to the correct internal host
-
-Key idea:
-The router determines which *type of traffic* goes to which internal service.
-
----
+- LAN: `192.168.86.x`
 
 ### 3. DNS Layer
-This is the naming and resolution layer.
-
-Components:
 - Pi-hole
-- local DNS overrides
-- Cloudflare public DNS
-- DuckDNS (fallback)
+- Cloudflare
 
-Role:
-- resolves names for LAN clients
-- enables split-horizon DNS
+### 4. Entry Layer (Web)
+- Caddy (runs on primary node)
 
----
-
-### 4. Entry Layer (Web Stack)
-
-Component:
-- Caddy
-
-Role:
-- handles HTTP / HTTPS only
-- terminates TLS
-- routes based on hostname
-
-Key idea:
-Caddy is the **web entry point**, not the only entry point into the system.
-
----
-
-### 5. Parallel Ingress: Honeypot Layer
-
-Component:
-- Cowrie (Docker container)
-
-Role:
-- receives SSH traffic intended for attackers/bots
-- simulates a vulnerable system
-- captures behavior for analysis and display
-
-Architecture:
-
-```text
-Internet TCP/22
-    → Router port forward
-    → 192.168.86.53:2222
-    → Cowrie container (2222)
-```
-
-Key idea:
-- This path **bypasses Caddy entirely**
-- It is intentionally exposed to hostile traffic
-- It is not part of the normal application stack
-
----
+### 5. Parallel Ingress (Honeypot)
+- Cowrie (primary node, Docker)
 
 ### 6. Application Layer
+- Flask (primary)
+- Jellyfin (primary)
 
-Components:
-- Flask (public app)
-- Jellyfin
+### 7. Expansion Path
 
-Additional role:
-- Flask will act as a **presentation layer** for Cowrie data
-
-Data flow:
+Future direction:
 
 ```text
-Cowrie → JSON logs → Flask → Website UI
+Multiple nodes → distributed services
 ```
 
-Key idea:
-Flask is both:
-- a normal web app
-- a consumer of honeypot data
+Possible evolution:
+- move services to separate machines
+- isolate workloads (media, honeypot, web)
 
 ---
 
-### 7. Email Handling Layer (External)
+## 🎯 Key Shift
 
-Components:
-- Cloudflare Email Routing
-- Gmail
-- SMTP2GO
-
-Role:
-- handles all email outside the home server
-
----
-
-## 🔁 Request / Data Flows
-
-### A. Web Traffic (Normal Users)
+Previously:
 
 ```text
-Internet → Cloudflare → Router 80/443 → Caddy → Flask/Jellyfin
+Internet → single server → everything
 ```
 
----
-
-### B. Honeypot Traffic (Attackers)
+Now:
 
 ```text
-Internet → Router 22 → Cowrie
+Internet → router → primary node → services
+                     ↘ secondary nodes (lab / future roles)
 ```
-
-- no TLS
-- no Caddy
-- no authentication barrier
-- intentionally exposed
-
----
-
-### C. Honeypot Data Pipeline
-
-```text
-Attacker → Cowrie → cowrie.json → Flask → Browser UI
-```
-
----
-
-### D. Local Traffic
-
-```text
-LAN client → Pi-hole → Caddy → apps
-```
-
----
-
-### E. Email Flow
-
-```text
-Internet → Cloudflare Email Routing → Gmail
-Gmail → SMTP2GO → recipient
-```
-
----
-
-## 🎯 Mental Model Summary
-
-- The system has **multiple ingress paths**:
-  - Web (Caddy)
-  - Honeypot (Cowrie)
-
-- Caddy handles **trusted user traffic**
-- Cowrie handles **untrusted hostile traffic**
-
-- Flask becomes a **bridge**:
-  - serving users
-  - visualizing attacker behavior
-
-- Email remains **external to the system runtime**
