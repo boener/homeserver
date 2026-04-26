@@ -1,5 +1,31 @@
 # 🧾 Changelog
 
+## 2026-04-26 — Outbound Email (SMTP2Go) Integration
+
+### Added
+- Outbound email capability via Postfix + SMTP2Go
+- New service documentation: `docs/services/outbound-email.md`
+
+### Changed
+- Primary server now includes outbound email as a core service
+
+### Fixed
+- Resolved SMTP authentication issues caused by relayhost mismatch
+- Resolved sender rejection due to unverified domain (`ian@ubuntu`)
+
+### Configuration
+- Configured Postfix as local MTA
+- Configured authenticated SMTP relay via SMTP2Go (`[mail.smtp2go.com]:587`)
+- Enabled TLS encryption for outbound mail
+- Implemented sender canonical rewrite to `ian@ianboen.com`
+
+### Insight
+- SMTP relay requires exact host matching between relayhost and SASL map
+- External mail providers enforce verified sender domains
+- Local MTA pattern (Postfix + mailutils) creates a clean abstraction for alerting
+
+---
+
 ## 2026-04-26 — Backup System Hardening
 
 ### Changed
