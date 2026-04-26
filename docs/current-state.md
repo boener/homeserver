@@ -16,6 +16,7 @@ _Last updated: 2026-04-26_
   - Jellyfin
   - Cowrie honeypot
   - Backup system
+  - Outbound email (Postfix + SMTP2Go)
 
 ### Secondary Node (`macbook`)
 
@@ -50,6 +51,20 @@ _Last updated: 2026-04-26_
 - Running and accessible on LAN
 - Bound to host port: `2222`
 - Not yet exposed to the internet
+
+---
+
+## 📧 Outbound Email (Primary Server)
+
+### Status
+- Operational
+- Uses SMTP2Go relay
+
+### Function
+- Sends system alerts and notifications
+- Used by scripts, cron jobs, and services
+
+See: `docs/services/outbound-email.md`
 
 ---
 
