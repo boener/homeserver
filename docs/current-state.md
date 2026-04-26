@@ -1,6 +1,6 @@
 # 🧠 Home Server – Current State
 
-_Last updated: 2026-04-25_
+_Last updated: 2026-04-26_
 
 ---
 
@@ -75,5 +75,25 @@ _Last updated: 2026-04-25_
 
 ## 💽 Backup System (Primary Server)
 
+### Mount Point
+- `/mnt/backup`
+
+### Subdirectories
 - `/mnt/backup/storage`
 - `/mnt/backup/system`
+
+### Mount Behavior
+- External USB drive mounted by UUID
+- Uses `nofail` and `x-systemd.automount`
+- Mounted on first access rather than at boot
+
+### Backup Execution
+- Storage backup:
+  - Script: `/home/ian/backup.sh`
+  - Schedule: `0 3 * * *` (user cron)
+
+- System backup:
+  - Script: `/usr/local/sbin/system-backup.sh`
+  - Schedule: `30 3 * * *` (root cron)
+
+See `docs/services/backup.md` for full details.
