@@ -93,7 +93,7 @@ The device name may change across boots, but the UUID should remain stable.
 This runs from user `ian`'s crontab:
 
 ```text
-0 3 * * * /home/ian/backup.sh
+0 3 * * * /home/ian/backup.sh || echo "Storage backup FAILED on $(hostname) at $(date)" | mail -s "BACKUP FAILURE: storage" <configured alert address>
 ```
 
 Schedule meaning:
@@ -101,6 +101,7 @@ Schedule meaning:
 - every day
 - at 3:00 AM
 - as user `ian`
+- sends an email alert if the backup script exits non-zero
 
 ### Source and destination
 
@@ -164,7 +165,7 @@ This prevents the script from accidentally writing backup data into the plain `/
 This runs from root's crontab:
 
 ```text
-30 3 * * * /usr/local/sbin/system-backup.sh
+30 3 * * * /usr/local/sbin/system-backup.sh || echo "System backup FAILED on $(hostname) at $(date)" | mail -s "BACKUP FAILURE: system" <configured alert address>
 ```
 
 Schedule meaning:
@@ -172,6 +173,7 @@ Schedule meaning:
 - every day
 - at 3:30 AM
 - as root
+- sends an email alert if the backup script exits non-zero
 
 ### Source and destination
 
@@ -227,6 +229,21 @@ This prevents root's system backup from writing into the unmounted `/mnt/backup`
 
 ---
 
+## Failure Alerts
+
+Both cron jobs are wrapped with shell `||` failure handling. If a backup script exits non-zero, the server sends an email alert using the local `mail` command.
+
+Current failure subjects:
+
+```text
+BACKUP FAILURE: storage
+BACKUP FAILURE: system
+```
+
+The intended behavior is failure-only notification: successful backups stay quiet, failed backups send email.
+
+---
+
 ## Operational Notes
 
 ### Manual test commands
@@ -263,10 +280,4 @@ That accidental root-disk backup data was removed, the storage directory layout 
 
 ### Future improvement
 
-Cron output is not currently redirected to a dedicated backup log file. A useful future improvement would be to redirect each backup job to a log, for example:
-
-```text
-0 3 * * * /home/ian/backup.sh >> /home/ian/backup.log 2>&1
-```
-
-and a similar root-owned log for the system backup.
+Cron output is not currently redirected to a dedicated backup log file. A useful future improvement would be to redirect each backup job to a log while preserving failure alerts.
