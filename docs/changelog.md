@@ -1,5 +1,34 @@
 # 🧾 Changelog
 
+## 2026-04-29 — WireGuard VPN (MacBook Node)
+
+### Added
+- WireGuard VPN service on secondary node (`macbook`)
+- New service documentation: `docs/services/wireguard-vpn.md`
+
+### Configuration
+- VPN subnet: `10.0.0.0/24`
+- Server address: `10.0.0.1`
+- Client addressing model: static (`10.0.0.x`)
+- Public endpoint: `ianboen.com:51820`
+- Router forward: UDP `51820` → `192.168.86.45:51820`
+- DNS for clients: Pi-hole (`192.168.86.49`)
+
+### Behavior
+- Full-tunnel VPN (all client traffic routed through home network)
+- NAT via `iptables MASQUERADE` on `macbook`
+- IP forwarding enabled on interface startup
+- Service managed via `wg-quick@wg0`
+- Enabled at boot and verified across reboot
+
+### Impact
+- Introduces a trusted remote access path into the LAN
+- Does not affect existing services (Cowrie remains on TCP `22`)
+
+### Notes
+- Key material currently stored in `/home/ian`
+- Planned future move to `/etc/wireguard` for tighter control
+
 ## 2026-04-26 — Outbound Email (SMTP2Go) Integration
 
 ### Added
