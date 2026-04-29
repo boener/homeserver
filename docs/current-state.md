@@ -48,9 +48,9 @@ _Last updated: 2026-04-26_
 ## 🕵️ Cowrie SSH Honeypot (Primary Server)
 
 ### Current Exposure State
-- Running and accessible on LAN
+- Running and accessible
 - Bound to host port: `2222`
-- Not yet exposed to the internet
+- Exposed to the internet: Router forwards external port `22` to host port `2222`
 
 ---
 
@@ -76,7 +76,7 @@ See: `docs/services/outbound-email.md`
 
 ### Additional Hostnames
 - `jellyfin.ianboen.com`
-- `cloud.ianboen.com`
+- `cloud.ianboen.com` (planned)
 
 ---
 
