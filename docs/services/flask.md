@@ -36,7 +36,8 @@ In practice, Flask is the server’s **public toybox**.
 
 ### Public Access
 Flask is intentionally internet-facing through:
-- `https://boener.duckdns.org`
+- `https://www.ianboen.com` and `https://ianboen/com`
+- `https://boener.duckdns.org` (retiring)
 
 ### Routing
 Caddy receives incoming requests and reverse proxies them to Flask on:
@@ -74,7 +75,8 @@ Past / current examples include:
 - novelty homepage content
 - the “Swirling Poop Emoji” page
 - a comment-box experiment that sent user comments to a local model running on the Windows machine and generated poop-themed responses
-- the current heart-splitter emoji game
+- heart-splitter emoji game
+- The current Cowrie log display
 
 The exact app content may change, but the structural role remains the same:
 
@@ -107,6 +109,7 @@ The goal is to quickly make strange or funny web things and put them online.
 - handled by Caddy
 
 ### Public URL
+- `https://www.ianboen.com` and `https://ianboen.com`
 - `https://boener.duckdns.org`
 
 ---
@@ -129,7 +132,7 @@ This is important because it means the home server can serve as a **web front-en
 ## ⚠️ Operational Notes
 
 ### Public Means Public
-Unlike Jellyfin, Flask is intentionally exposed to the internet.
+Flask is intentionally exposed to the internet.
 
 That means changes here should be made with more awareness of:
 - input handling
