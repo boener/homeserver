@@ -40,12 +40,12 @@ With Caddy:
 ## 🌍 Hostnames / Routing
 
 ### ianboen.com www.ianboen.com
-### boener.duckdns.org (retireing)
+### boener.duckdns.org (retiring)
 Routes to:
 - Flask application on `127.0.0.1:5000`
 
 ### jellyfin.ianboen.com
-### jellyboen.duckdns.org (retireing)
+### jellyboen.duckdns.org (retiring)
 Routes to:
 - Jellyfin on `127.0.0.1:8096`
 
@@ -116,7 +116,7 @@ Caddy depends on DNS working correctly.
 
 ### Public Internet
 - Cloudflare resolves ianboen.com toward the WAN IP
-- DuckDNS resolves domains toward the WAN IP (retireing)
+- DuckDNS resolves domains toward the WAN IP (retiring)
 
 This creates a **split-horizon DNS** pattern:
 - same hostname
