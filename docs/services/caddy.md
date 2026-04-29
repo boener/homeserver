@@ -39,11 +39,13 @@ With Caddy:
 
 ## 🌍 Hostnames / Routing
 
-### boener.duckdns.org
+### ianboen.com www.ianboen.com
+### boener.duckdns.org (retireing)
 Routes to:
 - Flask application on `127.0.0.1:5000`
 
-### jellyboen.duckdns.org
+### jellyfin.ianboen.com
+### jellyboen.duckdns.org (retireing)
 Routes to:
 - Jellyfin on `127.0.0.1:8096`
 
@@ -76,8 +78,8 @@ That is why:
 
 Current high-level behavior:
 
-- `boener.duckdns.org` → Flask backend
-- `jellyboen.duckdns.org` → Jellyfin backend
+- `ianboen.com` `www.ianboen.com` `boener.duckdns.org` → Flask backend
+- `jellyfin.ianboen.com` `jellyboen.duckdns.org` → Jellyfin backend
 - Jellyfin has an additional LAN-only access rule enforced in Caddy
 
 This makes Caddy both:
@@ -89,9 +91,9 @@ This makes Caddy both:
 ## 🛡️ Access Control
 
 ### Jellyfin Rule
-Jellyfin is intentionally **not public**.
+Jellyfin via duckdns is intentionally **not public**.
 
-Caddy checks the client IP range and denies non-local traffic with:
+Caddy checks the client IP range and denies non-local traffic from jellyboen.duckdns.com with:
 - HTTP 403 Forbidden
 
 ### Why This Matters
@@ -101,6 +103,7 @@ This is a clean pattern because it allows:
 - valid public certificates
 - simple local access
 - no public exposure of the media server itself
+- This will change when DuckDNS is retired
 
 ---
 
@@ -112,7 +115,8 @@ Caddy depends on DNS working correctly.
 - Pi-hole resolves local service names toward the server’s LAN IP
 
 ### Public Internet
-- DuckDNS resolves domains toward the WAN IP
+- Cloudflare resolves ianboen.com toward the WAN IP
+- DuckDNS resolves domains toward the WAN IP (retireing)
 
 This creates a **split-horizon DNS** pattern:
 - same hostname
