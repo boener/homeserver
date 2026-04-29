@@ -41,6 +41,12 @@ sudo wg show
 sudo ss -ulnp | grep 51820
 ip addr show wg0
 
+## Failure Modes
+
+- No handshake → check port forward / DNS
+- Handshake but no LAN access → check iptables MASQUERADE
+- Connected but no internet → check AllowedIPs (0.0.0.0/0)
+
 ## Notes
 
 - Runs on secondary node to isolate network services
