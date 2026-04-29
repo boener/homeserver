@@ -6,9 +6,7 @@ _Last updated: 2026-04-25_
 
 Secondary Ubuntu lab node.
 
-This machine now serves as the VPN ingress point for the home network while continuing to function as a general-purpose lab node.
-
-This machine is currently documented as a general-purpose lab/server node, separate from the primary `ubuntu` server that currently hosts the public web stack, Jellyfin, Cowrie, backups, and related services.
+This machine serves as the VPN ingress point for the home network while also functioning as a general-purpose lab node.
 
 ## System Identity
 
