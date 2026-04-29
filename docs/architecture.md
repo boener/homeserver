@@ -41,11 +41,22 @@ The system is evolving from **single-node → multi-node architecture**.
 ### 5. Parallel Ingress (Honeypot)
 - Cowrie (primary node, Docker)
 
-### 6. Application Layer
+### 6. VPN Ingress (WireGuard)
+
+- Runs on secondary node (`macbook`)
+- UDP port `51820`
+- Provides authenticated remote access into the LAN
+
+Flow:
+```text
+Internet → router → macbook (WireGuard) → LAN
+```
+
+### 7. Application Layer
 - Flask (primary)
 - Jellyfin (primary)
 
-### 7. Expansion Path
+### 8. Expansion Path
 
 Future direction:
 
@@ -70,6 +81,13 @@ Internet → single server → everything
 Now:
 
 ```text
-Internet → router → primary node → services
-                     ↘ secondary nodes (lab / future roles)
+Internet
+   ↓
+router
+   ↓
+primary node (web/services)
+   ↓
+secondary node (VPN ingress)
+   ↘
+   LAN clients / services
 ```
