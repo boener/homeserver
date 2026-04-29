@@ -83,7 +83,7 @@ See: `docs/services/wireguard-vpn.md`
 - Running and accessible
 - Bound to host port: `2222`
 - Exposed to the internet: Router forwards external port `22` to host port `2222`
-- - Unaffected by WireGuard; Cowrie remains on external TCP `22`, while WireGuard uses UDP `51820`
+- Unaffected by WireGuard; Cowrie remains on external TCP `22`, while WireGuard uses UDP `51820`
 
 ---
 
