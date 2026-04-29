@@ -1,6 +1,6 @@
 # 🧠 Home Server – Current State
 
-_Last updated: 2026-04-26_
+_Last updated: 2026-04-29_
 
 ---
 
