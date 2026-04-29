@@ -36,7 +36,7 @@ In practice, Flask is the server’s **public toybox**.
 
 ### Public Access
 Flask is intentionally internet-facing through:
-- `https://www.ianboen.com` and `https://ianboen/com`
+- `https://www.ianboen.com` and `https://ianboen.com`
 - `https://boener.duckdns.org` (retiring)
 
 ### Routing
