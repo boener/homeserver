@@ -39,6 +39,7 @@ WireGuard is running on the `macbook` node to provide full-tunnel VPN access int
 
 sudo wg show
 sudo ss -ulnp | grep 51820
+ip addr show wg0
 
 ## Notes
 
