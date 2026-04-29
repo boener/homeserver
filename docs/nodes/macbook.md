@@ -4,7 +4,9 @@ _Last updated: 2026-04-25_
 
 ## Role
 
-Secondary Ubuntu lab node added to the home server project.
+Secondary Ubuntu lab node.
+
+This machine now serves as the VPN ingress point for the home network while continuing to function as a general-purpose lab node.
 
 This machine is currently documented as a general-purpose lab/server node, separate from the primary `ubuntu` server that currently hosts the public web stack, Jellyfin, Cowrie, backups, and related services.
 
@@ -16,6 +18,11 @@ This machine is currently documented as a general-purpose lab/server node, separ
 - LAN IP: `192.168.86.45`
 - Addressing model: DHCP reservation on the Google WiFi router
 - Primary network interface: `enp2s0f0`
+
+## Services
+
+- WireGuard VPN → `docs/services/wireguard-vpn.md`
+- Backlight control → `docs/services/backlight-control.md`
 
 ## Hardware Summary
 
@@ -39,6 +46,14 @@ macbook → 192.168.86.45
 ```
 
 The IP address is reserved on the router rather than statically configured on the host.
+
+### VPN Role
+
+This node hosts the WireGuard VPN service and acts as a secure ingress path into the LAN.
+
+- Listens on UDP `51820`
+- Receives forwarded traffic from the router
+- Performs NAT to allow VPN clients to access LAN resources without requiring router-level routing changes
 
 ## Backlight / Lid Behavior
 
@@ -73,3 +88,4 @@ ACPI lid rule:
 - This machine is intentionally tracked as a separate node rather than folded into the primary server documentation.
 - The primary production-ish home server remains `ubuntu` at `192.168.86.53`.
 - Do not assume services are running on this node unless they are explicitly documented here or in service-specific docs.
+- - This node is now the primary trusted ingress point for remote access via VPN.
