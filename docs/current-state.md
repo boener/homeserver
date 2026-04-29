@@ -24,6 +24,10 @@ _Last updated: 2026-04-26_
 - IP: `192.168.86.45`
 - Documentation:
   - `docs/nodes/macbook.md`
+- Hosts:
+  - WireGuard VPN
+- Service documentation:
+  - `docs/services/wireguard-vpn.md`
 
 ---
 
@@ -45,12 +49,43 @@ _Last updated: 2026-04-26_
 
 ---
 
+---
+
+## 🔐 WireGuard VPN (Secondary Node)
+
+### Status
+- Operational
+- Runs on `macbook`
+- Enabled at boot and reboot-tested
+
+### Network Details
+- Host LAN IP: `192.168.86.45`
+- LAN interface: `enp2s0f0`
+- VPN interface: `wg0`
+- VPN subnet: `10.0.0.0/24`
+- Server VPN IP: `10.0.0.1`
+- First client VPN IP: `10.0.0.2`
+- Public port: UDP `51820`
+
+### Router Forward
+- External UDP `51820` → `192.168.86.45:51820`
+
+### DNS
+- VPN clients use Pi-hole: `192.168.86.49`
+
+### Endpoint
+- `ianboen.com:51820`
+- Cloudflare DNS record must be DNS-only, not proxied
+
+See: `docs/services/wireguard-vpn.md`
+
 ## 🕵️ Cowrie SSH Honeypot (Primary Server)
 
 ### Current Exposure State
 - Running and accessible
 - Bound to host port: `2222`
 - Exposed to the internet: Router forwards external port `22` to host port `2222`
+- - Unaffected by WireGuard; Cowrie remains on external TCP `22`, while WireGuard uses UDP `51820`
 
 ---
 
