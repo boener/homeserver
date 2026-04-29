@@ -49,8 +49,6 @@ _Last updated: 2026-04-26_
 
 ---
 
----
-
 ## 🔐 WireGuard VPN (Secondary Node)
 
 ### Status
