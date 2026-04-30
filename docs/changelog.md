@@ -1,5 +1,32 @@
 # 🧾 Changelog
 
+## 2026-04-29 — WireGuard VPN File Access Workaround
+
+### Added
+- Documented SFTP access to the MacBook over WireGuard at `10.0.0.1`
+- Installed and tested `sshfs` on the MacBook
+- Added temporary storage bridge from MacBook to Ubuntu storage:
+  - Ubuntu source: `ian@192.168.86.53:/mnt/storage`
+  - MacBook mount point: `~/vpn-share/storage`
+  - Remote WinSCP path: `/home/ian/vpn-share/storage`
+
+### Fixed / Worked Around
+- Avoided immediate home LAN subnet migration despite suspected `192.168.86.0/24` subnet collision with remote networks
+- Established a usable file-access path that does not disrupt roommates, IoT devices, TVs, Google Home, switches, or other LAN clients
+
+### Verified
+- SFTP to `ian@10.0.0.1` works from Windows over WireGuard
+- WinSCP can browse the MacBook filesystem over VPN
+- WinSCP can browse Ubuntu `/mnt/storage` through the MacBook SSHFS mount
+- A small PDF file copied successfully from the remote Windows machine into the bridged storage path
+
+### Notes
+- SSHFS mount is currently manual and does not persist across reboot
+- Long-term options remain:
+  - keep manual SSHFS mount
+  - automate the mount
+  - migrate home LAN to a less collision-prone subnet during a planned maintenance window
+
 ## 2026-04-29 — WireGuard VPN (MacBook Node)
 
 ### Added
